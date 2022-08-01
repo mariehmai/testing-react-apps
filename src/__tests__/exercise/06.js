@@ -8,6 +8,8 @@ import Location from '../../examples/location'
 
 jest.mock('react-use-geolocation')
 
+// afterEach(() => jest.resetAllMocks())
+
 test('displays the users current location', async () => {
   const fakePosition = {
     coords: {
@@ -38,4 +40,25 @@ test('displays the users current location', async () => {
   expect(screen.getByText(/longitude/i)).toHaveTextContent(
     `Longitude: ${fakePosition.coords.longitude}`,
   )
+})
+
+test('displays an error when the geolocation fails', async () => {
+  const testErrorMessage = 'something went wrong'
+  let setReturnValue
+  function useMockCurrentPosition() {
+    const state = React.useState([])
+    setReturnValue = state[1]
+    return state[0]
+  }
+  useCurrentPosition.mockImplementation(useMockCurrentPosition)
+
+  render(<Location />)
+  expect(screen.getByLabelText(/loading/i)).toBeInTheDocument()
+
+  act(() => {
+    setReturnValue([null, {message: testErrorMessage}])
+  })
+
+  expect(screen.queryByLabelText(/loading/i)).not.toBeInTheDocument()
+  expect(screen.getByRole('alert')).toHaveTextContent(testErrorMessage)
 })
